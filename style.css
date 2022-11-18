@@ -1,0 +1,28 @@
+
+
+@keyframes flicker {
+    0% {
+      background-position: left 0px top 0px;
+    }
+    100% {
+        background-position: left 0px top 205px;
+    }
+}
+
+p {
+    font-family: "Taiko";
+    font-size: 20px;
+  }
+
+canvas {
+    border: 0px solid #000000;
+    background-image: url('./assets/background/tiledbg.jpg');
+    background-size: 50%;
+    animation: flicker 20s linear infinite;
+}
+
+body {
+    background-color: #aaaaaa;
+    margin: 0;
+    overflow: hidden;
+}
