@@ -5,7 +5,7 @@
       background-position: left 0px top 0px;
     }
     100% {
-        background-position: left 0px top 100vh;
+        background-position: left 0px top 100vmax;
     }
 }
 
@@ -18,7 +18,7 @@ canvas {
     border: 0px solid #000000;
     background-image: url('./assets/background/tiledbg.jpg');
     background-size: 200%;
-    animation: flicker 20s linear infinite;
+    animation: flicker 60s linear infinite;
 }
 
 body {
