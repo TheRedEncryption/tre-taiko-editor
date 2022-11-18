@@ -32,7 +32,7 @@ function createButtons(){
   var ebSize = 288 * ebScale
   var ebSpacing = window.innerWidth * 0.1 / (numButtons + 1)
   const valueNames = ["empty", "small_do", "small_ka", "big_do", "big_ka"];
-  const valueLocs = ["", "./assets/drums/small_do.png", "./assets/drums/small_ka.png", "./assets/drums/big_do.png", "./assets/drums/big_ka.png", "./assets/drums/big_ka.png"];
+  const valueLocs = ["./assets/drums/empty.png", "./assets/drums/small_do.png", "./assets/drums/small_ka.png", "./assets/drums/big_do.png", "./assets/drums/big_ka.png", "./assets/drums/big_ka.png"];
   for (let i = 0; i < valueNames.length; i++){
     EditorButton((i + 1) * ebSpacing + i * ebSize, window.innerHeight * 0.5, valueNames[i], valueLocs[i], ebScale)
   }
