@@ -1,29 +1,17 @@
+// GLOBAL VARIABLE DECLARATIONS
 const valueNames = ["empty", "small_do", "small_ka", "big_do", "big_ka"];
 const valueLocs = ["./assets/drums/empty.png", "./assets/drums/small_do.png", "./assets/drums/small_ka.png", "./assets/drums/big_do.png", "./assets/drums/big_ka.png", "./assets/drums/big_ka.png"];
 
-var buttons = []
+var buttons = [];
 var nodes = [];
 
 var Taiko = new FontFace('Taiko', 'url(./assets/font/TnT.ttf)');
 
-function startGame() {
-  myGameArea.start();
-  make_base();
-  //interval = setInterval("refresh()", 0);
-}
-
-function refresh(){
-  clear();
-  myGameArea.canvas.width = window.innerWidth;
-  myGameArea.canvas.height = window.innerHeight;
-  make_base();
-  draw_words();
-  createButtons();
-}
-
-function clear() {
-  myGameArea.context.clearRect(0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
-}
+var beatlist = ["0000000000000000"];
+var currentMeasure = 0;
+var measureData = beatlist[currentMeasure]
+var currentButton = "empty";
+var currentNode;
 
 var myGameArea = {
   canvas : document.createElement("canvas"),
@@ -36,14 +24,18 @@ var myGameArea = {
   }
 }
 
+Taiko.load().then(function(font){ /* not technically a variable, but c'mon, man! */
+  document.fonts.add(font);
+  //console.log('Font loaded');
+  refresh();
+});
 
+var nodeScale = 0.01 * (window.innerWidth * 0.9) / 28;
 
-var gamebutton = new Image();
-gamebutton.src = './assets/buttons/button_nb.png';
-gamebutton.onload = function(){createButtons()}
+//CLASS DECLARATIONS
 
 class EditorButton {
-  constructor(x, y, value, image, scale) {
+  constructor(x, y, value, image, scale, buttonImage) {
     this.x = x;
     this.y = y;
     this.value = value;
@@ -51,10 +43,10 @@ class EditorButton {
     this.scale = scale;
     this.width = 288 * scale;
     this.height = 216 * scale;
-    myGameArea.context.drawImage(gamebutton, 0, 0, 288, 216, x, y, 288 * scale, 216 * scale);
+    myGameArea.context.drawImage(buttonImage, 0, 0, 288, 216, x, y, 288 * scale, 216 * scale);
     var logo = new Image();
     logo.src = image;
-    console.log(logo);
+    //console.log(logo);
     logo.onload = function () { myGameArea.context.drawImage(logo, 0, 0, logo.width, logo.height, x + (144 * scale) - (logo.width * scale / 2), y + (90 * scale) - (logo.height * scale / 2), logo.width * scale, logo.height * scale); };
   }
 }
@@ -66,15 +58,35 @@ class Node {
     this.source = source;
     var nodeImage = new Image();
     nodeImage.src = source;
-    console.log(source);
-    
-
+    this.image = nodeImage;
     nodeImage.onload = function(){
-      var thiswidth = (nodeImage.width/100) * (window.innerWidth * 0.9) / 28;
-      var thisheight = (nodeImage.height/100) * (window.innerWidth * 0.9) / 28;
+      var thiswidth = nodeImage.width * nodeScale;
+      var thisheight = nodeImage.height * nodeScale;
       myGameArea.context.drawImage(nodeImage, 0, 0, nodeImage.width, nodeImage.height, x - thiswidth / 2, y - thisheight / 2, thiswidth, thisheight);
     }
   }
+}
+
+//EVERYTHING ELSE I GUESS
+
+function startGame() {
+  myGameArea.start();
+  refresh();
+}
+
+function refresh(){
+  clear();
+  myGameArea.canvas.width = window.innerWidth;
+  myGameArea.canvas.height = window.innerHeight;
+  measureData = beatlist[currentMeasure]
+  nodeScale = 0.01 * (window.innerWidth * 0.9) / 28;
+  make_base();
+  draw_words();
+  createButtons();
+}
+
+function clear() {
+  myGameArea.context.clearRect(0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
 }
 
 function createButtons(){
@@ -82,17 +94,18 @@ function createButtons(){
   var ebScale = window.innerWidth * 0.9 / 288 / numButtons
   var ebSize = 288 * ebScale
   var ebSpacing = window.innerWidth * 0.1 / (numButtons + 1)
-  for (let i = 0; i < valueNames.length; i++){
-    buttons[i] = new EditorButton((i + 1) * ebSpacing + i * ebSize, window.innerHeight * 0.5, valueNames[i], valueLocs[i], ebScale)
+  var gamebutton = new Image();
+  gamebutton.src = './assets/buttons/button_nb.png';
+  gamebutton.onload = function(){
+    for (let i = 0; i < valueNames.length; i++){
+      buttons[i] = new EditorButton((i + 1) * ebSpacing + i * ebSize, window.innerHeight * 0.5, valueNames[i], valueLocs[i], ebScale, gamebutton)
+    }
   }
 }
 
 function isInside(mx, my, x1, y1, x2, y2){
-    // console.log((x1 < mx) , (mx < x2) , (y1 < my) , (my < y2));
     return (x1 < mx) && (mx < x2) && (y1 < my) && (my < y2);
 }
-
-
 
 async function make_base()
 {  
@@ -100,23 +113,18 @@ async function make_base()
   play_area.src = './assets/background/playarea.png';
   play_area.onload = function(){
     myGameArea.context.drawImage(play_area,0,0,1,300,0,(window.innerHeight / 2) - 150,window.innerWidth,300);
-    for (let i = 0; i < 16; i++){
-      nodes[i] = new Node((i * ((window.innerWidth * 0.9) / 16)) + (window.innerWidth * 0.07), (window.innerHeight * 0.39), "./assets/drums/big_ka.png"); //"./assets/background/playarea_node.png")
-      console.log(i);
-    }
+    drawNodes();
   }
 }
 
- 
-
-
-Taiko.load().then(function(font){
-
-  // with canvas, if this is ommited won't work
-  document.fonts.add(font);
-  console.log('Font loaded');
-  draw_words();
-});
+function drawNodes(){
+  var loc = "";
+  for (let i = 0; i < 16; i++){
+    loc = valueLocs[measureData[i]]
+    //console.log(loc);
+    nodes[i] = new Node((i * ((window.innerWidth * 0.9) / 16)) + (window.innerWidth * 0.07), (window.innerHeight * 0.39), loc); //"./assets/background/playarea_node.png")
+  }
+}
 
 function label(text, x, y, size){
   myGameArea.context.font = size + "px Taiko";
@@ -133,7 +141,6 @@ function draw_words(){
   label("BPM: ", window.innerHeight * 0.05, window.innerHeight * 0.25, "30");
 }
 
-
 startGame();
 
 // interval = setInterval(() => {
@@ -142,12 +149,12 @@ startGame();
 //   clearInterval(interval);
 // }, 500);
 
-var currentButton = "empty";
-
 document.addEventListener("mousedown", (e)=>{
   //console.log(e.x, e.y);
   currentButton = handleButtonClick(e.x, e.y);
-  console.log(currentButton);
+  currentNode = handleNodeClick(e.x, e.y);
+  updateBeatmap();
+  refresh();
 })
 
 window.addEventListener("resize", (e)=>{
@@ -161,4 +168,45 @@ function handleButtonClick(x, y){
     }
   }
   return currentButton;
+}
+
+function handleNodeClick(x, y){
+  for(let i = 0; i < nodes.length; i++){
+    var offsetX = nodes[i].image.width * nodeScale / 2;
+    var offsetY = nodes[i].image.height * nodeScale / 2;
+    if(isInside(x, y, nodes[i].x - offsetX, nodes[i].y - offsetY, nodes[i].image.width * nodeScale + nodes[i].x - offsetX, nodes[i].image.height * nodeScale + nodes[i].y - offsetY)){
+      //console.log(i);
+      return i;
+    }
+  }
+  return null;
+}
+
+function updateBeatmap(){
+  if(currentNode !== null){
+    var note;
+    for(let i = 0; i < valueNames.length; i++){
+      //console.log(currentButton);
+      if (valueNames[i] ==  currentButton){
+        note = i;
+        //console.log(currentButton, valueNames[i], note);
+      }
+    }
+    beatlist[currentMeasure] = replaceAt(beatlist[currentMeasure], currentNode, note);
+    //console.log(beatlist);
+  }
+}
+
+function replaceAt(inputString, loc, replacement){
+  var input = []
+  for (let i = 0; i < inputString.length; i++){
+    input[i] = inputString[i];
+  }
+  input[loc] = replacement;
+  var output = "";
+  for (let i = 0; i < input.length; i++){
+    //console.log(output, input[i]);
+    output = output.concat(input[i])
+  }
+  return output;
 }
