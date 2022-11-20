@@ -16,8 +16,8 @@ p {
 
 canvas {
     border: 0px solid #000000;
-    background-image: url('./assets/background/tiledbg.jpg');
-    background-size: 200%;
+    background-image: url('./assets/background/tile.png');
+    background-size: 20%;
     animation: flicker 60s linear infinite;
 }
 
