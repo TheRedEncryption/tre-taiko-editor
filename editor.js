@@ -32,6 +32,39 @@ Taiko.load().then(function(font){ /* not technically a variable, but c'mon, man!
 
 var nodeScale = 0.01 * (window.innerWidth * 0.9) / 28;
 
+//GLOBAL IMAGES
+
+var play_area = new Image();
+play_area.src = './assets/background/playarea.png';
+
+var gamebutton = new Image(); /* game button */
+gamebutton.src = './assets/buttons/button_nb.png';
+
+var empty = new Image(); /* gray drum image */
+empty.src = './assets/drums/empty.png';
+
+var small_do = new Image(); /* smol red */
+small_do.src = './assets/drums/small_do.png';
+
+var small_ka = new Image(); /* smol blu */
+small_ka.src = './assets/drums/small_ka.png';
+
+var big_do = new Image(); /* beeg red */
+big_do.src = './assets/drums/big_do.png';
+
+var big_ka = new Image(); /* beeg blu */
+big_ka.src = './assets/drums/big_ka.png';
+
+var imgDict = {
+  // KEY : VALUE
+  // "empty" : empty (the key, "empty", is the id, whereas the value empty is the Image variable)
+  "empty" : empty,
+  "small_do" : small_do,
+  "small_ka" : small_ka,
+  "big_do" : big_do,
+  "big_ka" : big_ka
+};
+
 //CLASS DECLARATIONS
 
 class EditorButton {
@@ -44,10 +77,11 @@ class EditorButton {
     this.width = 288 * scale;
     this.height = 216 * scale;
     myGameArea.context.drawImage(buttonImage, 0, 0, 288, 216, x, y, 288 * scale, 216 * scale);
-    var logo = new Image();
-    logo.src = image;
-    //console.log(logo);
-    logo.onload = function () { myGameArea.context.drawImage(logo, 0, 0, logo.width, logo.height, x + (144 * scale) - (logo.width * scale / 2), y + (90 * scale) - (logo.height * scale / 2), logo.width * scale, logo.height * scale); };
+    var logo = imgDict[image]; //new Image();
+    //logo.src = image;
+    //logo.onload = function () { 
+      myGameArea.context.drawImage(logo, 0, 0, logo.width, logo.height, x + (144 * scale) - (logo.width * scale / 2), y + (90 * scale) - (logo.height * scale / 2), logo.width * scale, logo.height * scale); 
+    //};
   }
 }
 
@@ -55,15 +89,15 @@ class Node {
   constructor(x, y, source) {
     this.x = x;
     this.y = y;
-    this.source = source;
-    var nodeImage = new Image();
-    nodeImage.src = source;
+    //this.source = imgDict[source];
+    var nodeImage = imgDict[source];//new Image();
+    //nodeImage.src = source;
     this.image = nodeImage;
-    nodeImage.onload = function(){
+    //nodeImage.onload = function(){
       var thiswidth = nodeImage.width * nodeScale;
       var thisheight = nodeImage.height * nodeScale;
       myGameArea.context.drawImage(nodeImage, 0, 0, nodeImage.width, nodeImage.height, x - thiswidth / 2, y - thisheight / 2, thiswidth, thisheight);
-    }
+    //}
   }
 }
 
@@ -94,13 +128,13 @@ function createButtons(){
   var ebScale = window.innerWidth * 0.9 / 288 / numButtons
   var ebSize = 288 * ebScale
   var ebSpacing = window.innerWidth * 0.1 / (numButtons + 1)
-  var gamebutton = new Image();
-  gamebutton.src = './assets/buttons/button_nb.png';
-  gamebutton.onload = function(){
+  //var gamebutton = new Image();
+  //gamebutton.src = './assets/buttons/button_nb.png';
+  //gamebutton.onload = function(){
     for (let i = 0; i < valueNames.length; i++){
-      buttons[i] = new EditorButton((i + 1) * ebSpacing + i * ebSize, window.innerHeight * 0.5, valueNames[i], valueLocs[i], ebScale, gamebutton)
+      buttons[i] = new EditorButton((i + 1) * ebSpacing + i * ebSize, window.innerHeight * 0.5, valueNames[i], valueNames[i], ebScale, gamebutton)
     }
-  }
+  //}
 }
 
 function isInside(mx, my, x1, y1, x2, y2){
@@ -109,18 +143,18 @@ function isInside(mx, my, x1, y1, x2, y2){
 
 async function make_base()
 {  
-  var play_area = new Image();
-  play_area.src = './assets/background/playarea.png';
-  play_area.onload = function(){
+  // var play_area = new Image();
+  // play_area.src = './assets/background/playarea.png';
+  //play_area.onload = function(){
     myGameArea.context.drawImage(play_area,0,0,1,300,0,(window.innerHeight / 2) - 150,window.innerWidth,300);
     drawNodes();
-  }
+  //}
 }
 
 function drawNodes(){
   var loc = "";
   for (let i = 0; i < 16; i++){
-    loc = valueLocs[measureData[i]]
+    loc = valueNames[measureData[i]]
     //console.log(loc);
     nodes[i] = new Node((i * ((window.innerWidth * 0.9) / 16)) + (window.innerWidth * 0.07), (window.innerHeight * 0.39), loc); //"./assets/background/playarea_node.png")
   }
