@@ -1,5 +1,3 @@
-
-
 @keyframes flicker {
     0% {
       background-position: left 0px top 0px;
@@ -7,6 +5,50 @@
     100% {
         background-position: left 0px top 100vmax;
     }
+}
+
+@font-face {
+    src: url("./assets/font/TnT.ttf");
+    font-family: initial;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    appearance: none;
+    margin:0;
+}
+
+input[type=number] {
+    border: none;
+    background-color: transparent;
+    resize: none;
+    height: 5vh;
+    font-size: 4vw;
+    /* text-align: center; */
+    width: vmax;
+    color: white;
+    -webkit-text-stroke-color: #000000;
+    -webkit-text-stroke-width: 1px;
+    font-weight: bolder;
+    font-family: "Caveat Brush", cursive;
+}
+
+input[type=file]{
+    width: 7vw;
+}
+::-webkit-file-upload-button{
+    border-radius: 10px;
+    font-weight: bolder;
+    font-family: "Caveat Brush", cursive;
+    width: 7vw;
+    height: 5vh;
+    font-size: 1.5vw
+    
+}
+
+input[type=number]:focus{
+    border: none;
+    animation: baller 2s ease-in-out;
 }
 
 p {
