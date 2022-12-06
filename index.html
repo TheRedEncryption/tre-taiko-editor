@@ -7,12 +7,13 @@
     <title>Taiko Editor</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Caveat+Brush">
+    <link rel="stylesheet" href="./assets/font/TnT.ttf">
 </head>
 <body>
     
-    <script src="editor.js"></script>
-    <input type="number" style="position:absolute;left:9vmax;top:21vh;width:6vmax " min = "1" max = "999" step = "1" value = "100" id = "bpm"/>
-    <input type="file" style="position:absolute;left:92vw;top:21vh" title=" "/>
+    <script src="editor.js" defer></script>
+    <input type="number" style="position:absolute;left:9vw;top:21vh;width:6vw " min = "1" max = "999" step = "1" value = "100" id = "bpm"/>
+    <input type="file" style="position:absolute;right:1vw;top:21vh" id="song_file" accept=".wav,.ogg,.mp3"/>
+    <button type="button" style = "position:absolute;right:1vw;bottom:1vh" id="export">Export & Download</button>
 </body>
 </html>

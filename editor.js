@@ -24,6 +24,13 @@ var myGameArea = {
   }
 }
 
+var bpmTextbox;
+var bpm = 100;
+
+var songInput;
+var audio;
+var songTitle = "Upload Song: ";
+
 Taiko.load().then(function(font){ /* not technically a variable, but c'mon, man! */
   document.fonts.add(font);
   //console.log('Font loaded');
@@ -207,10 +214,11 @@ function label(text, x, y, size){
 }
 
 function draw_words(){
-  label("Taiko Editor (太鼓のエディタ)", window.innerHeight * 0.05, window.innerHeight * 0.12, "60");
-  label("BY THEREDENCRYPTION", window.innerHeight * 0.05, window.innerHeight * 0.168, "30");
+  label("Taiko Editor (太鼓のエディター)", window.innerHeight * 0.05, window.innerHeight * 0.12, "60");
+  label("By TheRedEncryption", window.innerHeight * 0.05, window.innerHeight * 0.185, "30");
   label("Measure: " + (currentMeasure + 1) + " of " + (beatlist.length), window.innerHeight * 0.35, window.innerHeight * 0.25, "30")
   label("BPM: ", window.innerHeight * 0.05, window.innerHeight * 0.25, "30");
+  label(songTitle, window.innerWidth * 0.81, window.innerHeight * 0.245, "20")
 }
 
 startGame();
@@ -312,7 +320,7 @@ function updateBeatmap(){
 }
 
 function replaceAt(inputString, loc, replacement){
-  var input = []
+  var input = [];
   for (let i = 0; i < inputString.length; i++){
     input[i] = inputString[i];
   }
@@ -323,4 +331,56 @@ function replaceAt(inputString, loc, replacement){
     output = output.concat(input[i])
   }
   return output;
+}
+
+addEventListener('DOMContentLoaded', (event) => {
+  document.getElementById("export").addEventListener("click",compileData);
+  bpmTextbox = document.getElementById("bpm");
+  bpmTextbox.addEventListener("change",sanitizeBpm);
+  songInput = document.getElementById("song_file");
+  songInput.addEventListener("change",getSong);
+});
+
+function sanitizeBpm(){
+  if(!bpmTextbox.valueAsNumber){
+    bpmTextbox.value = "100";
+  }
+  if(bpmTextbox.valueAsNumber < 1){
+    bpmTextbox.value = "1"
+  }
+  if(bpmTextbox.valueAsNumber > 999){
+    bpmTextbox.value = "999"
+  }
+  bpm = bpmTextbox.valueAsNumber;
+}
+
+function getSong(){
+  songTitle = songInput.files[0]["name"];
+  var file = URL.createObjectURL(songInput.files[0]);
+  audio = new Audio(file);
+  audio.play(); /* <------- there's a funny thing called audio.currentTime that accepts doubles!!!*/
+  refresh();
+}
+
+function calculateStart(){
+  if(audio){
+    audio.currentTime = currentMeasure * (bpm/60);
+  }
+}
+
+function compileData(){
+  var output = ["BPM:" + bpm + "\n","#START\n"];
+  var offset = output.length;
+  for(let i = 0; i < beatlist.length; i++){
+    output[i + offset] = beatlist[i] + ",\n";
+  }
+  output[output.length] = "#END";
+  //return output;
+  blob = new Blob(output, {type: ".tja"});
+  link = document.createElement("a");
+  link.href = window.URL.createObjectURL(blob);
+  link.setAttribute("download", "output.tja");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
