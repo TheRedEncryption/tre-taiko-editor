@@ -1,9 +1,9 @@
 @keyframes flicker {
     0% {
-      background-position: left 0px top 0px;
+      background-position: left 0px top 0vh;
     }
     100% {
-        background-position: left 0px top 100vmax;
+        background-position: left 0px top 199vh;
     }
 }
 
@@ -73,7 +73,7 @@ canvas {
     border: 0px solid #000000;
     background-image: url('./assets/background/tile.png');
     background-size: 20%;
-    animation: flicker 60s linear infinite;
+    animation: flicker 120s linear infinite;
 }
 
 body {

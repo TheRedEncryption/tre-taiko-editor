@@ -14,6 +14,8 @@ var measureData = beatlist[currentMeasure]
 var currentButton = "empty";
 var currentNode;
 
+var numButtons = valueNames.length; /* change this if you want to add more buttons!!! */
+
 var myGameArea = {
   canvas : document.createElement("canvas"),
   start : function() {
@@ -29,7 +31,15 @@ var bpm = 100;
 
 var songInput;
 var audio;
-var songTitle = "Upload Song: ";
+var songTitle = "Upload Song:";
+var currentlyPlaying = false;
+var audioRequest;
+
+var playbackStartingPos;
+var playbackEndingPos; /* used for visually stopping the playhead */
+var playbackTrueEnding; /* used for calculating how fast the playhead should go */
+var playbackRequest; /* requestAnimationFrame id to use for cancelAnimationFrame */
+var playheadX = 0;
 
 Taiko.load().then(function(font){ /* not technically a variable, but c'mon, man! */
   document.fonts.add(font);
@@ -39,7 +49,18 @@ Taiko.load().then(function(font){ /* not technically a variable, but c'mon, man!
 
 var nodeScale = 0.01 * (window.innerWidth * 0.9) / 28;
 
+var mediaButton;
+
 //GLOBAL IMAGES
+
+var playButton = new Image(); /* play audio */
+playButton.src = './assets/buttons/play_nb.png';
+
+var stopButton = new Image(); /* sotp audio */
+stopButton.src = './assets/buttons/stop_nb.png';
+
+var playhead = new Image();
+playhead.src = './assets/background/playhead_nb.png'
 
 var play_area = new Image();
 play_area.src = './assets/background/playarea.png';
@@ -68,10 +89,10 @@ big_ka.src = './assets/drums/big_ka.png';
 var backButton = new Image(); /* back button */
 backButton.src = './assets/buttons/arrow_back_nb.png';
 
-var backButtonGray = new Image(); /* back button */
+var backButtonGray = new Image(); /* (unpressable) back button */
 backButtonGray.src = './assets/buttons/arrow_back_blocked_nb.png';
 
-var forwardButton = new Image(); /* back button */
+var forwardButton = new Image(); /* forward button */
 forwardButton.src = './assets/buttons/arrow_forward_nb.png';
 
 var imgDict = {
@@ -96,13 +117,9 @@ class EditorButton {
     this.width = 288 * scale;
     this.height = 216 * scale;
     myGameArea.context.drawImage(buttonImage, 0, 0, 288, 216, x, y, 288 * scale, 216 * scale);
-    var logo = imgDict[image]; //new Image();
-    this.depression = depressed * (logo.width * scale / 5)
-    //console.log(this.depression);
-    //logo.src = image;
-    //logo.onload = function () { 
-      myGameArea.context.drawImage(logo, 0, 0, logo.width, logo.height, x + (144 * scale) - (logo.width * scale / 2), y + (90 * scale) - (logo.height * scale / 2) + this.depression, logo.width * scale, logo.height * scale); 
-    //};
+    var logo = imgDict[image];
+    this.depression = depressed * (logo.width * scale / 5);
+    myGameArea.context.drawImage(logo, 0, 0, logo.width, logo.height, x + (144 * scale) - (logo.width * scale / 2), y + (90 * scale) - (logo.height * scale / 2) + this.depression, logo.width * scale, logo.height * scale); 
   }
 }
 
@@ -110,15 +127,11 @@ class Node {
   constructor(x, y, source) {
     this.x = x;
     this.y = y;
-    //this.source = imgDict[source];
-    var nodeImage = imgDict[source];//new Image();
-    //nodeImage.src = source;
+    var nodeImage = imgDict[source];
     this.image = nodeImage;
-    //nodeImage.onload = function(){
-      var thiswidth = nodeImage.width * nodeScale;
-      var thisheight = nodeImage.height * nodeScale;
-      myGameArea.context.drawImage(nodeImage, 0, 0, nodeImage.width, nodeImage.height, x - thiswidth / 2, y - thisheight / 2, thiswidth, thisheight);
-    //}
+    var thiswidth = nodeImage.width * nodeScale;
+    var thisheight = nodeImage.height * nodeScale;
+    myGameArea.context.drawImage(nodeImage, 0, 0, nodeImage.width, nodeImage.height, x - thiswidth / 2, y - thisheight / 2, thiswidth, thisheight);
   }
 }
 
@@ -130,12 +143,25 @@ class Arrow {
     this.increment = increment;
     this.thiswidth = image.width * nodeScale * 2;
     this.thisheight = image.height * nodeScale * 2;
-    //if(currentMeasure !== 0){
-      //if(this.increment !== -1){
-        //console.log(this.increment);
     myGameArea.context.drawImage(image, 0, 0, image.width, image.height, x - this.thiswidth / 2, y - this.thisheight / 2, this.thiswidth, this.thisheight);
-      //}
-    //}
+  }
+}
+
+class MediaButton {
+  constructor(x, y, scale, isPlaying){
+    this.x = x;
+    this.y = y;
+    if(isPlaying){
+      this.image = stopButton;
+    }
+    else{
+      this.image = playButton;
+    }
+    this.trueX = this.x - this.image.width / 2 * scale;
+    this.trueY = this.y - this.image.height / 2 * scale;
+    this.w = this.image.width * scale;
+    this.h = this.image.height * scale;
+    myGameArea.context.drawImage(this.image, 0, 0, this.image.width, this.image.height, this.trueX, this.trueY, this.image.width * scale, this.image.height * scale);
   }
 }
 
@@ -162,7 +188,6 @@ function clear() {
 }
 
 function createButtons(){
-  var numButtons = 8;
   var ebScale = window.innerWidth * 0.9 / 288 / numButtons
   var ebSize = 288 * ebScale
   var ebSpacing = window.innerWidth * 0.1 / (numButtons + 1)
@@ -182,6 +207,7 @@ function createButtons(){
     arrows[0] = new Arrow(window.innerWidth * 0.03, (window.innerHeight * 0.39), backButtonGray, -1);
   }
   arrows[1] = new Arrow(window.innerWidth * 0.97, (window.innerHeight * 0.39), forwardButton, 1);
+  mediaButton = new MediaButton(window.innerWidth * 0.95, window.innerHeight * 0.1, (window.innerWidth * 0.0005), currentlyPlaying);
 }
 
 function isInside(mx, my, x1, y1, x2, y2){
@@ -201,9 +227,13 @@ function drawNodes(){
     //console.log(loc);
     nodes[i] = new Node((i * ((window.innerWidth * 0.9) / 16)) + (window.innerWidth * 0.078), (window.innerHeight * 0.39), loc); //"./assets/background/playarea_node.png")
   }
+  playbackStartingPos = nodes[0].x;
+  playbackEndingPos = nodes[15].x;
+  playbackTrueEnding = nodes[15].x + (window.innerWidth * 0.055)
 }
 
-function label(text, x, y, size){
+function label(text, x, y, size, align = "left"){
+  myGameArea.context.textAlign = align;
   myGameArea.context.miterLimit = 2;
   myGameArea.context.font = (size * (window.innerHeight * window.innerWidth) / 1000000) + "px Taiko";
   myGameArea.context.fillStyle = "black";
@@ -218,22 +248,17 @@ function draw_words(){
   label("By TheRedEncryption", window.innerHeight * 0.05, window.innerHeight * 0.185, "30");
   label("Measure: " + (currentMeasure + 1) + " of " + (beatlist.length), window.innerHeight * 0.35, window.innerHeight * 0.25, "30")
   label("BPM: ", window.innerHeight * 0.05, window.innerHeight * 0.25, "30");
-  label(songTitle, window.innerWidth * 0.81, window.innerHeight * 0.245, "20")
+  label(songTitle, window.innerWidth * 0.91, window.innerHeight * 0.245, "20", "right")
 }
 
 startGame();
-
-// interval = setInterval(() => {
-//   draw_words();
-//   //console.log("words");
-//   clearInterval(interval);
-// }, 500);
 
 document.addEventListener("mousedown", (e)=>{
   //console.log(e.x, e.y);
   handleArrowClick(e.x, e.y);
   currentButton = handleButtonClick(e.x, e.y);
   currentNode = handleNodeClick(e.x, e.y);
+  handleMediaClick(e.x, e.y);
   updateBeatmap();
   refresh();
 })
@@ -275,8 +300,48 @@ function handleArrowClick(x, y){
   //console.log("baller");
 }
 
+function handleMediaClick(x, y){
+  if(!audio){
+    return;
+  }
+  if(isInside(x,y, mediaButton.trueX, mediaButton.trueY, mediaButton.trueX + mediaButton.w, mediaButton.trueY + mediaButton.h)){
+    currentlyPlaying = !currentlyPlaying;
+    if(!currentlyPlaying){
+      stopAudio();
+    }
+    else{
+      play();
+    }
+  }
+  refresh();
+}
+
+function play() {
+  audio.currentTime = calculateStart();
+  audio.play();
+  audioRequest = setTimeout(stopAudio, 1000 * (240 / bpm));
+  playheadX = 0;
+  playbackRequest = requestAnimationFrame(animatePlayback);
+}
+
+function stopAudio(){
+  audio.pause();
+  clearTimeout(audioRequest);
+  cancelAnimationFrame(playbackRequest);
+  currentlyPlaying = false;
+  refresh();
+}
+
+function animatePlayback() {
+  refresh();
+  scale = window.innerWidth * 0.001;
+  myGameArea.context.drawImage(playhead, 0, 0, playhead.width, playhead.height, playbackStartingPos + playheadX - playhead.width / 2 * scale, (window.innerHeight * 0.39) - playhead.height / 2 * scale, playhead.width * scale, playhead.height * scale);
+  playheadX += (playbackTrueEnding - playbackStartingPos)/((240/bpm)*60);
+  playbackRequest = requestAnimationFrame(animatePlayback);
+}
+
 function scrollMeasureBy(move){
-  if(move != -1 || currentMeasure != 0){ /* i have literally no clue how this logic even works so please forgive me */
+  if(move != -1 || currentMeasure != 0){ /* i have literally no clue how this logic even works so please forgive me DeMorgan */
     //console.log("this is so suspicious heehee");
     currentMeasure += move;
   }
@@ -356,15 +421,20 @@ function sanitizeBpm(){
 
 function getSong(){
   songTitle = songInput.files[0]["name"];
+  if(songTitle.length > 20){
+    songTitle = songTitle.substring(0,20) + "...";
+  }
   var file = URL.createObjectURL(songInput.files[0]);
   audio = new Audio(file);
-  audio.play(); /* <------- there's a funny thing called audio.currentTime that accepts doubles!!!*/
+  //audio.play(); /* <------- there's a funny thing called audio.currentTime that accepts doubles!!!*/
   refresh();
 }
 
 function calculateStart(){
   if(audio){
-    audio.currentTime = currentMeasure * (bpm/60);
+    amount = currentMeasure * (240/bpm);
+    audio.currentTime = amount;
+    return amount;
   }
 }
 
