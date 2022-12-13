@@ -1,8 +1,30 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>404</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="7; URL=./index.html"/>
+    <title>what are you doing here? go back to safety</title>
+    <style>
+        body{
+            background-color: black;
+            color: red;
+        }
+    </style>
 </head>
 <body>
-  Sorry!
+<script>
+    iterate();
+
+    function iterate(){
+        for (let index = 0; index < Math.round(Math.random() * 32); index++) {
+            document.body.innerHTML += Math.round(Math.random()) + "";            
+        }
+        document.body.innerHTML += " 四百四 ";
+        window.requestAnimationFrame(iterate);
+    }
+</script>
+return to the safety of the editor, my friend, or risk perishing in the endless horror of the Taiko Void. welcome to 四百四. wake up before you can no longer do so.
 </body>
 </html>
