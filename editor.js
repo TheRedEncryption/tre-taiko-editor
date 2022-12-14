@@ -13,6 +13,7 @@ var currentMeasure = 0;
 var measureData = beatlist[currentMeasure]
 var currentButton = "empty";
 var currentNode;
+var previousActions = [{button: null, node: null, measure: 0, changedToButton: undefined}]
 
 var numButtons = valueNames.length; /* change this if you want to add more buttons!!! */
 
@@ -170,6 +171,7 @@ class MediaButton {
 function startGame() {
   myGameArea.start();
   refresh();
+  console.log("%cWelcome to the taiko zone, try typing taikoStats()", 'font-size: 15px; color: rgb(200,200,200); font-weight: 300; background-color: rgb(0,35,75);');
 }
 
 function refresh(){
@@ -254,13 +256,68 @@ function draw_words(){
 startGame();
 
 document.addEventListener("mousedown", (e)=>{
+  currentNode = handleNodeClick(e.x, e.y);
   //console.log(e.x, e.y);
+  previousPreviousButton = beatlist[currentMeasure][currentNode];
+  //console.log("PREV PREV BUTTON", previousPreviousButton)
+
   handleArrowClick(e.x, e.y);
   currentButton = handleButtonClick(e.x, e.y);
-  currentNode = handleNodeClick(e.x, e.y);
+  //get current button's value
+  let cBVal;
+  for(let i = 0; i < valueNames.length; i++){
+    if (valueNames[i] ==  currentButton){
+      cBVal = i;
+    }
+  }
+
+  lastAction = previousActions[previousActions.length-1]
+  
+  if(lastAction.measure!=currentMeasure || lastAction.node!=currentNode || lastAction.button!=cBVal){
+    let beegPrevButton;
+    if(previousPreviousButton==undefined){ beegPrevButton = currentButton}
+    previousActions.push({
+      button: previousPreviousButton,
+      node: currentNode,
+      measure: currentMeasure,
+      changedToButton: beegPrevButton
+    });
+    //console.log("NEW PREV ACTIONS: ", previousActions);
+  }
   handleMediaClick(e.x, e.y);
   updateBeatmap();
   refresh();
+})
+
+document.addEventListener("keydown", (e)=>{
+  if(e.key=="z" && e.ctrlKey){
+    e.preventDefault();
+    //console.log("ctrl+z pressed");
+    if(previousActions.length == 1) return;
+    prevAction = previousActions.pop();
+    for(const action of previousActions){
+      //console.log("ACTIONS IN PREV: ", action);
+    }
+    //console.log(prevAction.node, prevAction.button)
+    if(prevAction.node!=null){
+      //console.log("made it!")
+      beatlist[prevAction.measure] = replaceAt(beatlist[prevAction.measure], prevAction.node, prevAction.button);
+      //console.log("UPDATED: ", beatlist)
+      if(prevAction.measure!=currentMeasure){
+        currentMeasure = prevAction.measure;
+      }
+      refresh();
+    }
+    if(prevAction.changedToButton!=undefined && prevAction.changedToButton!=null){
+      if(prevAction.changedToButton != currentButton){
+        currentButton = prevAction.changedToButton;
+      }
+      else{
+        currentButton = null
+      }
+      refresh();
+    }
+  }
 })
 
 window.addEventListener("resize", (e)=>{
@@ -453,4 +510,8 @@ function compileData(){
   document.body.appendChild(link);
   link.click();
   link.remove();
+}
+
+function taikoStats(){
+  console.table({bpm: bpm, beatlist: beatlist, currentButton: currentButton, currentMeasure: currentMeasure, currentNode: currentNode});
 }
